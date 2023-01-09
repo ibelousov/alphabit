@@ -15,11 +15,18 @@ pub enum Direction {
     DOWN_RIGHT_TO_UP_LEFT,
     NONE
 }
+#[derive(Copy, Clone)]
+pub enum CeilType {
+    Active,
+    Empty,
+    Bonus
+}
 
 #[derive(Copy, Clone)]
 pub struct Ceil {
     pub letter: char,
-    pub checked: i32
+    pub checked: i32,
+    pub ceil_type: CeilType
 }
 
 pub struct Field {
@@ -41,7 +48,8 @@ impl  Field {
             for x in (0..width) {
                 nvec.push(Ceil {
                     letter: ' ',
-                    checked: 0
+                    checked: 0,
+                    ceil_type: CeilType::Active
                 })
             }
 
@@ -87,16 +95,24 @@ impl  Field {
         let string = String::from("АААААААААААААААААААААБББББВВВВВВВВВВВВВВВВГГГГГГДДДДДДДДДДЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЁЖЖЖЗЗЗЗЗИИИИИИИИИИИИИИИИИИИИИИИИИИИЙЙЙЙККККККККККККЛЛЛЛЛЛЛЛЛЛЛЛЛЛМММММММММММНННННННННННННННННННННННОООООООООООООООООООООООООООООООООООООППППППППППРРРРРРРРРРРРРРРРРСССССССССССССССССССТТТТТТТТТТТТТТТТТТТТТТУУУУУФФХХХЦЦЧЧЧЧЧШШЩЪЫЫЫЫЫЫЫЬЬЬЬЬЬЭЮЮЯЯЯЯЯЯЯ");
 
         for j in (0..self.height) {
+            let mut random_type = rand::thread_rng().gen_range(-self.width, self.width);
             for i in (0..self.width) {
                 let mut random_index = rand::thread_rng().gen_range(0, string.chars().enumerate().count());
 
                 for (sz, ch) in string.chars().enumerate() {
                     if random_index == 0 {
+
+                        let ceil_type = if (random_type as i32) == i {
+                            CeilType::Bonus
+                        } else {
+                            CeilType::Active
+                        };
+
                         self.data.borrow_mut()[j as usize][i as usize] = Ceil {
                             checked: 0,
-                            letter: ch
+                            letter: ch,
+                            ceil_type: ceil_type
                         };
-                        // print!("{}", self.data.borrow_mut()[j as usize][i as usize].letter);
                         break;
                     }
                     random_index -= 1;
@@ -151,12 +167,15 @@ impl  Field {
         let dictionary = include_str!("../../assets/words.txt").split("\n");
 
         let word2 = word.replace("е","ё");
+        let word3 = word.replace("и", "й");
 
         for word_from_dictionary in dictionary {
 
             let normalized_word = word_from_dictionary.trim().to_string().to_lowercase();
 
-            if normalized_word.eq(&word) || normalized_word.eq(&word2) {
+            if normalized_word.eq(&word) ||
+                normalized_word.eq(&word2) ||
+                normalized_word.eq(&word3) {
                 return true;
             }
         }
@@ -210,7 +229,8 @@ impl  Field {
             for j in (0..self.width) {
                 data[i as usize][j as usize] = Ceil {
                     checked: 0,
-                    letter: data[i as usize][j as usize].letter
+                    letter: data[i as usize][j as usize].letter,
+                    ceil_type: CeilType::Active
                 };
             }
         }
@@ -237,12 +257,14 @@ impl  Field {
         if is_near {
             data[y as usize][x as usize] = Ceil {
                 checked: max_val + 1,
-                letter:data[y as usize][x as usize].letter
+                letter:data[y as usize][x as usize].letter,
+                ceil_type: CeilType::Active
             };
         } else if !is_exists {
             data[y as usize][x as usize] = Ceil {
                 checked: 1,
-                letter: data[y as usize][x as usize].letter
+                letter: data[y as usize][x as usize].letter,
+                ceil_type: CeilType::Active
             };
         } else if is_same && self.check_word(word.to_lowercase()) {
 
@@ -251,7 +273,8 @@ impl  Field {
                     if data[y as usize][x as usize].checked > 0 {
                         data[y as usize][x as usize] = Ceil {
                             letter: data[y as usize][x as usize].letter,
-                            checked: -253
+                            checked: -253,
+                            ceil_type: CeilType::Empty
                         };
                     }
                 }

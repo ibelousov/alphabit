@@ -107,7 +107,7 @@ fn main() -> Result<(), confy::ConfyError> {
     for (y, row) in config.saved_field.iter().enumerate() {
         for (x,col) in row.iter().enumerate() {
             // println!("x: {}, y: {}", x, y);
-            field.borrow_mut().set(x as i32,y as i32, Ceil { letter: *col, checked: 0})
+            field.borrow_mut().set(x as i32,y as i32, Ceil { letter: *col, checked: 0, ceil_type: CeilType::Active})
         }
     }
 
@@ -227,7 +227,6 @@ fn main() -> Result<(), confy::ConfyError> {
                 if checked_value > 0 {
 
                     draw_rect_fill(j * 40 + 1, i * 40 + 1 + OFFSET_Y, 38, 38, color);
-
                     set_draw_color(enums::Color::White);
                     draw_text( &format!("{}", field_draw.get(j,i).letter), j * 40 + 15, i * 40 + 25 + OFFSET_Y);
 
@@ -236,10 +235,20 @@ fn main() -> Result<(), confy::ConfyError> {
                     draw_direction(j,i,field_draw.get_direction(j,i));
 
                 } else if checked_value == 0 {
-                    draw_rect_fill(j * 40 + 1, i * 40 + 1 + OFFSET_Y, 38, 38, enums::Color::rgb_color(63,65,82));
-                    set_draw_color(enums::Color::rgb_color(230,230,230));
+                    match field_draw.get(j,i).ceil_type {
+                        CeilType::Active => {
+                            draw_rect_fill(j * 40 + 1, i * 40 + 1 + OFFSET_Y, 38, 38, enums::Color::rgb_color(63,65,82));
+                            set_draw_color(enums::Color::rgb_color(230,230,230));
+                            draw_text( &format!("{}", field_draw.get(j,i).letter), j * 40 + 15, i * 40 + 25 + OFFSET_Y);
+                        },
+                        CeilType::Empty => {
+                            draw_rect_fill(j * 40 + 1, i * 40 + 1 + OFFSET_Y, 38, 38, enums::Color::rgb_color(63,65,82));
+                        },
+                        CeilType::Bonus => {
+                            draw_rect_fill(j * 40 + 1, i * 40 + 1 + OFFSET_Y, 38, 38, enums::Color::rgb_color(0,0,0));
+                        }
+                    }
 
-                    draw_text( &format!("{}", field_draw.get(j,i).letter), j * 40 + 15, i * 40 + 25 + OFFSET_Y);
                 } else {
                     let alpha = (checked_value.abs() as u8) / 5;
                     draw_rect_fill(j * 40 + 1, i * 40 + 1 + OFFSET_Y, 38, 38, color);
@@ -249,13 +258,15 @@ fn main() -> Result<(), confy::ConfyError> {
                     if(checked_value == -1) {
                         field_draw.set(j, i, Ceil {
                             checked: 0,
-                            letter: ' '
+                            letter: ' ',
+                            ceil_type: CeilType::Empty
                         });
                         field_draw.down(j,i);
                     } else {
                         field_draw.set(j, i, Ceil {
                             checked: checked_value + 14,
                             letter: field_draw.get(j, i).letter,
+                            ceil_type: CeilType::Empty
                         });
                     }
 
