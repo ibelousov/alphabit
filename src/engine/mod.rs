@@ -3,6 +3,8 @@ use rand::Rng;
 use std::cell::RefCell;
 use std::ops::Index;
 use std::fs;
+use serde::{Serialize,Deserialize, Serializer};
+use serde::ser::{SerializeStruct};
 
 pub enum Direction {
     LEFT_TO_RIGHT,
@@ -15,20 +17,22 @@ pub enum Direction {
     DOWN_RIGHT_TO_UP_LEFT,
     NONE
 }
-#[derive(Copy, Clone)]
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum CeilType {
     Active,
     Empty,
     Bonus
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct Ceil {
     pub letter: char,
     pub checked: i32,
     pub ceil_type: CeilType
 }
 
+#[derive(Debug,Serialize, Deserialize, Clone)]
 pub struct Field {
     pub scores: RefCell<i32>,
     is_word_ready: RefCell<bool>,
@@ -230,13 +234,18 @@ impl  Field {
                 data[i as usize][j as usize] = Ceil {
                     checked: 0,
                     letter: data[i as usize][j as usize].letter,
-                    ceil_type: CeilType::Active
+                    ceil_type: data[i as usize][j as usize].ceil_type
                 };
             }
         }
     }
 
     pub fn try_check(&self, x: i32, y: i32) {
+
+        if matches!(self.get(x,y).ceil_type, CeilType::Empty) ||
+            matches!(self.get(x,y).ceil_type, CeilType::Bonus){
+             return
+        };
 
         let (max_val,max_x,max_y) = self.find_max();
 

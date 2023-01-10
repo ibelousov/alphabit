@@ -19,23 +19,20 @@ use fltk::image::Image;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Config {
-    longest_name: String,
-    leader_table: Vec<(String,String,String)>,
-    saved_field: Vec<Vec<char>>,
-    saved_longest_name: String,
-    saved_scores: i32,
+    field: Field,
     position_x: i32,
     position_y: i32
 }
 
 impl ::std::default::Default for Config {
     fn default() -> Self {
+
+        let field = Field::new(WIDTH, HEIGHT);
+
+        field.generate();
+
         Self {
-            longest_name: String::new(),
-            leader_table: Vec::new(),
-            saved_field: Vec::new(),
-            saved_longest_name: String::new(),
-            saved_scores: 0,
+            field: field,
             position_x: 0,
             position_y: 0
         }
@@ -46,7 +43,7 @@ const WIDTH: i32 = 15;
 const HEIGHT: i32 = 15;
 const TITLE: &str = "Альфабит";
 const OFFSET_Y: i32 = 40;
-const SETTINGS_NAME: &str = "alphabitsettings";
+const SETTINGS_NAME: &str = "alphabits-ettings";
 
 fn get_green() -> i32 {
     let millis = SystemTime::now()
@@ -99,20 +96,8 @@ fn main() -> Result<(), confy::ConfyError> {
 
     let app = app::App::default();
 
-    let mut field = Rc::new(Field::new(WIDTH,HEIGHT));
-    field.borrow_mut().generate();
-    field.borrow_mut().set_longest_word(config.saved_longest_name.clone());
-    field.borrow_mut().set_scores(config.saved_scores);
-
-    for (y, row) in config.saved_field.iter().enumerate() {
-        for (x,col) in row.iter().enumerate() {
-            // println!("x: {}, y: {}", x, y);
-            field.borrow_mut().set(x as i32,y as i32, Ceil { letter: *col, checked: 0, ceil_type: CeilType::Active})
-        }
-    }
-
+    let mut field = Rc::new(config.field.clone());
     let field_draw = Rc::clone(&field);
-    let field_animation = Rc::clone(&field);
 
     let mut wind = Window::new(config.position_x, config.position_y, WIDTH * 40, HEIGHT * 40 + OFFSET_Y, TITLE);
 
@@ -135,12 +120,12 @@ fn main() -> Result<(), confy::ConfyError> {
                         field.generate();
                         field.set_longest_word(String::new());
                         field.set_scores(0);
-                        f.redraw();
 
-                        config.borrow_mut().saved_longest_name = String::new();
-                        config.borrow_mut().saved_field = Vec::new();
-                        config.borrow_mut().saved_scores = 0;
+                        config.field = (*field).clone();
+
                         confy::store(SETTINGS_NAME, None, &config);
+
+                        f.redraw();
                     }
 
                     if y < OFFSET_Y {
@@ -155,10 +140,7 @@ fn main() -> Result<(), confy::ConfyError> {
                         field.try_check(cell_x, cell_y);
                     }
 
-                    let bconfig = config.borrow_mut();
-                    bconfig.saved_longest_name = field.get_longest_word();
-                    bconfig.saved_scores = field.get_scores();
-
+                    config.field = (*field).clone();
                     confy::store(SETTINGS_NAME, None, &config);
 
                     f.redraw();
@@ -172,18 +154,6 @@ fn main() -> Result<(), confy::ConfyError> {
                         config.borrow_mut().position_x = f.x();
                         config.borrow_mut().position_y = f.y();
                         confy::store(SETTINGS_NAME, None, &config);
-                    }
-
-                    let bconfig = config.borrow_mut();
-                    bconfig.saved_field = Vec::new();
-                    for y in (0..HEIGHT) {
-                        let mut row = Vec::new();
-
-                        for x in (0..WIDTH) {
-                            row.push(field.get(x,y).letter);
-                        }
-
-                        bconfig.saved_field.push(row);
                     }
 
                     true
