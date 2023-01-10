@@ -1,21 +1,14 @@
 mod engine;
 
-use std::error::Error;
-use std::borrow::{Borrow, BorrowMut};
+use std::borrow::{BorrowMut};
 use engine::*;
-use fltk::{app, button::Button, frame::Frame, prelude::*, *, draw::*};
+use fltk::{app, prelude::*, *, draw::*};
 use fltk::window::Window;
-use fltk::enums::{Color, Event, FrameType};
-use std::sync::{mpsc, Mutex};
-use std::cell::RefCell;
+use fltk::enums::{Event};
 use std::rc::Rc;
-use std::thread;
-use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Serialize, Deserialize};
-use csv::ByteRecord;
 use fltk::app::MouseButton;
-use fltk::image::Image;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Config {
@@ -62,31 +55,31 @@ fn draw_direction(j:i32, i:i32, direction:Direction)
     set_line_style(LineStyle::Solid, 3);
 
     match direction {
-        Direction::LEFT_TO_RIGHT => {
+        Direction::LeftToRight => {
             draw_line(j * 40 + 20, i * 40 + 20 + OFFSET_Y, (j + 1) * 40, i * 40 + 20 + OFFSET_Y);
-        },
-        Direction::RIGHT_TO_LEFT => {
+        }
+        Direction::RightToLeft => {
             draw_line(j * 40 + 20, i * 40 + 20 + OFFSET_Y, j * 40, i * 40 + 20 + OFFSET_Y);
-        },
-        Direction::UP_TO_DOWN => {
+        }
+        Direction::UpToDown => {
             draw_line(j * 40 + 20, i * 40 + 20 + OFFSET_Y, j * 40 + 20, (i + 1) * 40 + OFFSET_Y);
-        },
-        Direction::DOWN_TO_UP => {
+        }
+        Direction::DownToUp => {
             draw_line(j * 40 + 20, i * 40 + 20 + OFFSET_Y,j * 40 + 20, i * 40 + OFFSET_Y);
-        },
-        Direction::DOWN_RIGHT_TO_UP_LEFT => {
+        }
+        Direction::DownRightToUpLeft => {
             draw_line(j * 40 + 20, i * 40 + 20 + OFFSET_Y, j * 40, i * 40 + OFFSET_Y);
-        },
-        Direction::UP_RIGHT_TO_DOWN_LEFT => {
+        }
+        Direction::UpRightToDownLeft => {
             draw_line(j * 40 + 20, i * 40 + 20 + OFFSET_Y,j * 40, (i+1) * 40 + OFFSET_Y);
-        },
-        Direction::DOWN_LEFT_TO_UP_RIGHT => {
+        }
+        Direction::DownLeftToUpRight => {
             draw_line(j * 40 + 20, i * 40 + 20 + OFFSET_Y, (j+1) * 40, i * 40 + OFFSET_Y);
-        },
-        Direction::UP_LEFT_TO_DOWN_RIGHT => {
+        }
+        Direction::UpLeftToDownRight => {
             draw_line(j * 40 + 20, i * 40 + 20 + OFFSET_Y,(j + 1) * 40, (i + 1) * 40 + OFFSET_Y);
-        },
-        Direction::NONE => {}
+        }
+        Direction::None => {}
     }
 }
 
@@ -96,7 +89,7 @@ fn main() -> Result<(), confy::ConfyError> {
 
     let app = app::App::default();
 
-    let mut field = Rc::new(config.field.clone());
+    let field = Rc::new(config.field.clone());
     let field_draw = Rc::clone(&field);
 
     let mut wind = Window::new(config.position_x, config.position_y, WIDTH * 40, HEIGHT * 40 + OFFSET_Y, TITLE);
@@ -123,7 +116,7 @@ fn main() -> Result<(), confy::ConfyError> {
 
                         config.field = (*field).clone();
 
-                        confy::store(SETTINGS_NAME, None, &config);
+                        confy::store(SETTINGS_NAME, None, &config).expect("Не удалось сохранить настройки");
 
                         f.redraw();
                     }
@@ -135,13 +128,13 @@ fn main() -> Result<(), confy::ConfyError> {
                     let (cell_x, cell_y) = (x / 40, (y - OFFSET_Y) / 40);
 
                     if app::event_mouse_button() == MouseButton::Right {
-                        field.deselect(cell_x, cell_y);
+                        field.deselect();
                     } else {
                         field.try_check(cell_x, cell_y);
                     }
 
                     config.field = (*field).clone();
-                    confy::store(SETTINGS_NAME, None, &config);
+                    confy::store(SETTINGS_NAME, None, &config).expect("Не удалось сохранить настройки");
 
                     f.redraw();
 
@@ -153,7 +146,7 @@ fn main() -> Result<(), confy::ConfyError> {
                         config.borrow_mut().position_x != f.y() {
                         config.borrow_mut().position_x = f.x();
                         config.borrow_mut().position_y = f.y();
-                        confy::store(SETTINGS_NAME, None, &config);
+                        confy::store(SETTINGS_NAME, None, &config).expect("Не удалось сохранить настройки");
                     }
 
                     true
@@ -163,7 +156,7 @@ fn main() -> Result<(), confy::ConfyError> {
         }
     });
 
-    wind.draw(move |w| {
+    wind.draw(move |_w| {
 
         set_font(enums::Font::Courier, 16);
         draw_rect_fill( 0,0,40 * WIDTH, OFFSET_Y,enums::Color::rgb_color(118,50, 40));
@@ -190,8 +183,8 @@ fn main() -> Result<(), confy::ConfyError> {
 
         draw_rect_fill(0, OFFSET_Y, WIDTH * 40, HEIGHT * 40, enums::Color::rgb_color(40,42,54));
 
-        for i in (0..HEIGHT) {
-            for j in (0..WIDTH) {
+        for i in 0..field_draw.get_height() {
+            for j in 0..field_draw.get_width() {
                 let checked_value = field_draw.is_checked(j, i);
 
                 if checked_value > 0 {
@@ -225,7 +218,7 @@ fn main() -> Result<(), confy::ConfyError> {
                     draw_rect_fill(j * 40 + 1, i * 40 + 1 + OFFSET_Y, 38, 38, enums::Color::rgb_color(63+alpha,65+alpha,82+alpha));
                     set_draw_color(enums::Color::rgb_color(163+alpha,165+alpha,182+alpha));
 
-                    if(checked_value == -1) {
+                    if checked_value == -1 {
                         field_draw.set(j, i, Ceil {
                             checked: 0,
                             letter: ' ',

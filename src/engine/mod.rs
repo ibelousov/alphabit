@@ -1,21 +1,17 @@
-use std::borrow::BorrowMut;
 use rand::Rng;
 use std::cell::RefCell;
-use std::ops::Index;
-use std::fs;
-use serde::{Serialize,Deserialize, Serializer};
-use serde::ser::{SerializeStruct};
+use serde::{Serialize,Deserialize};
 
 pub enum Direction {
-    LEFT_TO_RIGHT,
-    RIGHT_TO_LEFT,
-    UP_TO_DOWN,
-    DOWN_TO_UP,
-    UP_LEFT_TO_DOWN_RIGHT,
-    DOWN_LEFT_TO_UP_RIGHT,
-    UP_RIGHT_TO_DOWN_LEFT,
-    DOWN_RIGHT_TO_UP_LEFT,
-    NONE
+    LeftToRight,
+    RightToLeft,
+    UpToDown,
+    DownToUp,
+    UpLeftToDownRight,
+    DownLeftToUpRight,
+    UpRightToDownLeft,
+    DownRightToUpLeft,
+    None
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
@@ -46,10 +42,10 @@ impl  Field {
     pub fn new(width: i32, height: i32) -> Self {
         let data: RefCell<Vec<Vec<Ceil>>> = RefCell::new(Vec::new());
 
-        for y in (0..height) {
+        for _y in 0..height {
             let mut nvec: Vec<Ceil> = Vec::new();
 
-            for x in (0..width) {
+            for _x in 0..width {
                 nvec.push(Ceil {
                     letter: ' ',
                     checked: 0,
@@ -98,12 +94,12 @@ impl  Field {
     pub fn generate(&self) {
         let string = String::from("АААААААААААААААААААААБББББВВВВВВВВВВВВВВВВГГГГГГДДДДДДДДДДЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЁЖЖЖЗЗЗЗЗИИИИИИИИИИИИИИИИИИИИИИИИИИИЙЙЙЙККККККККККККЛЛЛЛЛЛЛЛЛЛЛЛЛЛМММММММММММНННННННННННННННННННННННОООООООООООООООООООООООООООООООООООООППППППППППРРРРРРРРРРРРРРРРРСССССССССССССССССССТТТТТТТТТТТТТТТТТТТТТТУУУУУФФХХХЦЦЧЧЧЧЧШШЩЪЫЫЫЫЫЫЫЬЬЬЬЬЬЭЮЮЯЯЯЯЯЯЯ");
 
-        for j in (0..self.height) {
-            let mut random_type = rand::thread_rng().gen_range(-self.width, self.width);
-            for i in (0..self.width) {
+        for j in 0..self.height {
+            let random_type = rand::thread_rng().gen_range(-self.width, self.width);
+            for i in 0..self.width {
                 let mut random_index = rand::thread_rng().gen_range(0, string.chars().enumerate().count());
 
-                for (sz, ch) in string.chars().enumerate() {
+                for ch in string.chars() {
                     if random_index == 0 {
 
                         let ceil_type = if (random_type as i32) == i {
@@ -127,8 +123,8 @@ impl  Field {
     }
 
     pub fn is_blocked(&self) -> bool {
-        for i in (0..self.height) {
-            for j in (0..self.width) {
+        for i in 0..self.height {
+            for j in 0..self.width {
                 if self.get(j,i).checked < 0 {
                     return true;
                 }
@@ -136,22 +132,6 @@ impl  Field {
         }
 
         false
-    }
-
-    pub fn print(&self) {
-        for j in (0..self.height) {
-            for i in (0..self.width) {
-                let letter = self.data.borrow()[j as usize][i as usize].letter;
-                let checked = self.data.borrow()[j as usize][i as usize].checked;
-
-                if checked != 0 {
-                    print!("{}({}) ", letter, 'x');
-                } else {
-                    print!("{}({}) ", letter, '_');
-                }
-            }
-            print!("{}", "\n");
-        }
     }
 
     pub fn get(&self, x: i32, y: i32) -> Ceil {
@@ -200,8 +180,8 @@ impl  Field {
         let mut max_x: i32 = -1;
         let mut max_y: i32 = -1;
 
-        for i in (0..self.height) {
-            for j in (0..self.width) {
+        for i in 0..self.height {
+            for j in 0..self.width {
                 if max < self.data.borrow()[i as usize][j as usize].checked {
                     max = self.data.borrow()[i as usize][j as usize].checked;
                     max_x = j;
@@ -226,11 +206,11 @@ impl  Field {
         }
     }
 
-    pub fn deselect(&self, x: i32, y: i32) {
+    pub fn deselect(&self) {
         let mut data = self.data.borrow_mut();
 
-        for i in (0..self.height) {
-            for j in (0..self.width) {
+        for i in 0..self.height {
+            for j in 0..self.width {
                 data[i as usize][j as usize] = Ceil {
                     checked: 0,
                     letter: data[i as usize][j as usize].letter,
@@ -251,13 +231,11 @@ impl  Field {
 
         let word = self.get_word();
         let word2 = word.clone();
-        let word3 = word.clone();
 
         let mut data = self.data.borrow_mut();
 
         let is_checked = data[y as usize][x as usize].checked == 0;
         let is_exists = max_val > 0;
-        let is_previous = (data[y as usize][x as usize].checked == max_val - 1) && data[y as usize][x as usize].checked > 0;
         let is_near = ((max_x - x).abs() == 1 || (max_y - y).abs() == 1) &&
                             ((max_x - x).abs() <= 1 && (max_y - y).abs() <= 1) &&
                             is_checked;
@@ -277,8 +255,8 @@ impl  Field {
             };
         } else if is_same && self.check_word(word.to_lowercase()) {
 
-            for y in (0..self.height) {
-                for x in (0..self.width) {
+            for y in 0..self.height {
+                for x in 0..self.width {
                     if data[y as usize][x as usize].checked > 0 {
                         data[y as usize][x as usize] = Ceil {
                             letter: data[y as usize][x as usize].letter,
@@ -304,8 +282,8 @@ impl  Field {
     }
 
     pub fn get_at_value(&self, val: i32) -> char {
-        for i in (0..self.height) {
-            for j in (0..self.width) {
+        for i in 0..self.height {
+            for j in 0..self.width {
                 if self.get(j,i).checked == val {
                     return self.get(j,i).letter;
                 }
@@ -317,9 +295,9 @@ impl  Field {
 
     pub fn get_word(&self) -> String {
         let mut value = String::from("");
-        let (max_val,max_x, max_y) = self.find_max();
+        let max = self.find_max();
 
-        for i in (1..max_val+1) {
+        for i in 1..max.0+1 {
             value.push(self.get_at_value(i));
         }
 
@@ -332,25 +310,25 @@ impl  Field {
 
         if v > 0 {
             if self.is_checked(x+1,y) == v + 1 {
-                return Direction::LEFT_TO_RIGHT;
+                return Direction::LeftToRight;
             } else if self.is_checked(x-1,y) == v + 1 {
-                return Direction::RIGHT_TO_LEFT;
+                return Direction::RightToLeft;
             } else if self.is_checked(x,y-1) == v + 1 {
-                return Direction::DOWN_TO_UP;
+                return Direction::DownToUp;
             } else if self.is_checked(x,y+1) == v + 1 {
-                return Direction::UP_TO_DOWN;
+                return Direction::UpToDown;
             } else if self.is_checked(x-1,y+1) == v + 1 {
-                return Direction::UP_RIGHT_TO_DOWN_LEFT;
+                return Direction::UpRightToDownLeft;
             } else if self.is_checked(x-1,y-1) == v + 1 {
-                return Direction::DOWN_RIGHT_TO_UP_LEFT;
+                return Direction::DownRightToUpLeft;
             } else if self.is_checked(x+1,y+1) == v + 1 {
-                return Direction::UP_LEFT_TO_DOWN_RIGHT;
+                return Direction::UpLeftToDownRight;
             } else if self.is_checked(x+1,y-1) == v + 1 {
-                return Direction::DOWN_LEFT_TO_UP_RIGHT;
+                return Direction::DownLeftToUpRight;
             }
         }
 
-        Direction::NONE
+        Direction::None
     }
 
     pub fn get_before_direction(&self, x: i32, y: i32) -> Direction {
@@ -358,24 +336,24 @@ impl  Field {
 
         if v > 1 {
             if self.is_checked(x+1,y) == v - 1 {
-                return Direction::LEFT_TO_RIGHT;
+                return Direction::LeftToRight;
             } else if self.is_checked(x-1,y) == v - 1 {
-                return Direction::RIGHT_TO_LEFT;
+                return Direction::RightToLeft;
             } else if self.is_checked(x,y-1) == v - 1 {
-                return Direction::DOWN_TO_UP;
+                return Direction::DownToUp;
             } else if self.is_checked(x,y+1) == v - 1 {
-                return Direction::UP_TO_DOWN;
+                return Direction::UpToDown;
             } else if self.is_checked(x-1,y+1) == v - 1 {
-                return Direction::UP_RIGHT_TO_DOWN_LEFT;
+                return Direction::UpRightToDownLeft;
             } else if self.is_checked(x-1,y-1) == v - 1 {
-                return Direction::DOWN_RIGHT_TO_UP_LEFT;
+                return Direction::DownRightToUpLeft;
             } else if self.is_checked(x+1,y+1) == v - 1 {
-                return Direction::UP_LEFT_TO_DOWN_RIGHT;
+                return Direction::UpLeftToDownRight;
             } else if self.is_checked(x+1,y-1) == v - 1 {
-                return Direction::DOWN_LEFT_TO_UP_RIGHT;
+                return Direction::DownLeftToUpRight;
             }
         }
 
-        Direction::NONE
+        Direction::None
     }
 }
