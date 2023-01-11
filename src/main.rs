@@ -38,16 +38,40 @@ const TITLE: &str = "Альфабит";
 const OFFSET_Y: i32 = 40;
 const SETTINGS_NAME: &str = "alphabits-ettings";
 
-fn get_green() -> i32 {
+fn get_green(offset: i32) -> u8 {
     let millis = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("Time went backwards")
         .as_millis();
 
-    let millis: i32 = (millis % 1000) as i32;
+    let millis: i32 = ((millis + (offset as u128)) % 1000) as i32;
     let millis =  (millis - 500).abs();
 
-    68 + (millis / 10)
+    (68 + (millis / 10)) as u8
+}
+
+fn get_blue(offset: i32) -> u8 {
+    let millis = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards")
+        .as_millis();
+
+    let millis: i32 = ((millis + (offset as u128)) % 2000) as i32;
+    let millis =  (millis - 1000).abs();
+
+    (68 + (millis / 10)) as u8
+}
+
+fn get_red(offset: i32) -> u8 {
+    let millis = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards")
+        .as_millis();
+
+    let millis: i32 = ((millis + (offset as u128)) % 3332) as i32;
+    let millis =  (millis - 1666).abs();
+
+    (68 + (millis / 10)) as u8
 }
 
 fn draw_direction(j:i32, i:i32, direction:Direction)
@@ -83,6 +107,49 @@ fn draw_direction(j:i32, i:i32, direction:Direction)
     }
 }
 
+fn draw_empty_ceil(x: i32, y: i32, bg: enums::Color) {
+    draw_rect_fill(x * 40 + 1, y * 40 + 1 + OFFSET_Y, 38, 38, bg);
+}
+
+fn draw_ceil(x: i32, y: i32, bg: enums::Color, fg: enums::Color, letter: char) {
+    draw_empty_ceil(x,y,bg);
+    set_draw_color(fg);
+    draw_text( &format!("{}", letter), x * 40 + 15, y * 40 + 25 + OFFSET_Y);
+}
+
+fn draw_ceil_direction(x: i32, y: i32, before_direction: Direction, after_direction: Direction) {
+    set_draw_color(enums::Color::White);
+    draw_direction(x,y,before_direction);
+    draw_direction(x,y,after_direction);
+}
+
+fn draw_scores(scores: i32) {
+    set_font(enums::Font::Courier, 16);
+    draw_rect_fill( 0,0,40 * WIDTH, OFFSET_Y,enums::Color::rgb_color(118,50, 40));
+    set_draw_color(enums::Color::rgb_color(255,255,255));
+    draw_text( &format!("ОЧКИ: {:0>5}", scores), 15, 25);
+}
+
+fn draw_longest_word(word: String) {
+    draw_rect_fill(150,0,300, OFFSET_Y, enums::Color::rgb_color(0,140,210));
+    set_draw_color(enums::Color::rgb_color(255,255,255));
+    if word.len() > 0 {
+        draw_text( &format!("{:^25}", word.to_uppercase()), 175, 25);
+    } else {
+        draw_text( &format!("{:^25}", "-"), 175, 25);
+    }
+}
+
+fn draw_finish_button() {
+    draw_rect_fill(450,0,150, OFFSET_Y, enums::Color::rgb_color(50,200,160));
+    set_draw_color(enums::Color::rgb_color(255,255,255));
+    draw_text( &format!("{}", "ФИНИШ"), 500, 25);
+}
+
+fn draw_bg() {
+    draw_rect_fill(0, OFFSET_Y, WIDTH * 40, HEIGHT * 40, enums::Color::rgb_color(40,42,54));
+}
+
 fn main() -> Result<(), confy::ConfyError> {
 
     let mut config: Config = confy::load(SETTINGS_NAME, None)?;
@@ -116,7 +183,8 @@ fn main() -> Result<(), confy::ConfyError> {
 
                         config.field = (*field).clone();
 
-                        confy::store(SETTINGS_NAME, None, &config).expect("Не удалось сохранить настройки");
+                        confy::store(SETTINGS_NAME, None, &config)
+                            .expect("Не удалось сохранить настройки");
 
                         f.redraw();
                     }
@@ -134,7 +202,8 @@ fn main() -> Result<(), confy::ConfyError> {
                     }
 
                     config.field = (*field).clone();
-                    confy::store(SETTINGS_NAME, None, &config).expect("Не удалось сохранить настройки");
+                    confy::store(SETTINGS_NAME, None, &config)
+                        .expect("Не удалось сохранить настройки");
 
                     f.redraw();
 
@@ -158,65 +227,79 @@ fn main() -> Result<(), confy::ConfyError> {
 
     wind.draw(move |_w| {
 
-        set_font(enums::Font::Courier, 16);
-        draw_rect_fill( 0,0,40 * WIDTH, OFFSET_Y,enums::Color::rgb_color(118,50, 40));
-        set_draw_color(enums::Color::rgb_color(255,255,255));
-        draw_text( &format!("ОЧКИ: {:0>5}", field_draw.get_scores()), 15, 25);
+        draw_scores(field_draw.get_scores());
 
-        draw_rect_fill(150,0,300, OFFSET_Y, enums::Color::rgb_color(0,140,210));
-        set_draw_color(enums::Color::rgb_color(255,255,255));
-        if field_draw.get_longest_word().len() > 0 {
-            draw_text( &format!("{:^25}", field_draw.get_longest_word().to_uppercase()), 175, 25);
-        } else {
-            draw_text( &format!("{:^25}", "-"), 175, 25);
-        }
+        draw_longest_word(field_draw.get_longest_word());
 
-        draw_rect_fill(450,0,150, OFFSET_Y, enums::Color::rgb_color(50,200,160));
-        set_draw_color(enums::Color::rgb_color(255,255,255));
-        draw_text( &format!("{}", "ФИНИШ"), 500, 25);
-        let green = get_green() as u8;
-        let color = if field_draw.is_word() == true {
-            enums::Color::rgb_color(100, green,100)
-        } else {
-            enums::Color::rgb_color(100, 100,100)
-        };
+        draw_finish_button();
 
-        draw_rect_fill(0, OFFSET_Y, WIDTH * 40, HEIGHT * 40, enums::Color::rgb_color(40,42,54));
+        let is_word = field_draw.is_word() == true;
+        let is_bonus_exists = field_draw.is_bonus_exists() == true;
+
+        draw_bg();
 
         for i in 0..field_draw.get_height() {
             for j in 0..field_draw.get_width() {
+                let offset = (j + i * field_draw.get_width()) * 225;
+                let color = if is_word {
+                    enums::Color::rgb_color(100, get_green(offset),100)
+                } else {
+                    enums::Color::rgb_color(100, 100,100)
+                };
+                let bonus_color = enums::Color::rgb_color(
+                    get_red(offset),get_green(offset),get_blue(offset)
+                );
+                let white = enums::Color::White;
+                let gray_color = enums::Color::rgb_color(63,65,82);
+                let almost_white = enums::Color::rgb_color(230,230,230);
+
                 let checked_value = field_draw.is_checked(j, i);
+                let is_on_the_bonus_line = field_draw.is_on_the_bonus_line(j,i);
+                let letter = field_draw.get(j,i).letter;
 
                 if checked_value > 0 {
 
-                    draw_rect_fill(j * 40 + 1, i * 40 + 1 + OFFSET_Y, 38, 38, color);
-                    set_draw_color(enums::Color::White);
-                    draw_text( &format!("{}", field_draw.get(j,i).letter), j * 40 + 15, i * 40 + 25 + OFFSET_Y);
+                    if is_word && is_bonus_exists {
+                        draw_ceil(j,i,bonus_color, white, letter);
+                    } else {
+                        draw_ceil(j,i,color,white, letter);
+                    }
 
-                    set_draw_color(enums::Color::White);
-                    draw_direction(j,i,field_draw.get_before_direction(j,i));
-                    draw_direction(j,i,field_draw.get_direction(j,i));
+                    draw_ceil_direction(j,i,
+                                        field_draw.get_before_direction(j,i),
+                                        field_draw.get_direction(j,i)
+                    );
 
                 } else if checked_value == 0 {
                     match field_draw.get(j,i).ceil_type {
                         CeilType::Active => {
-                            draw_rect_fill(j * 40 + 1, i * 40 + 1 + OFFSET_Y, 38, 38, enums::Color::rgb_color(63,65,82));
-                            set_draw_color(enums::Color::rgb_color(230,230,230));
-                            draw_text( &format!("{}", field_draw.get(j,i).letter), j * 40 + 15, i * 40 + 25 + OFFSET_Y);
+                            if is_word && is_bonus_exists && is_on_the_bonus_line {
+                                draw_ceil(j, i, bonus_color, almost_white, letter);
+                            } else {
+                                draw_ceil(j, i, gray_color, almost_white, letter);
+                            }
                         },
                         CeilType::Empty => {
-                            draw_rect_fill(j * 40 + 1, i * 40 + 1 + OFFSET_Y, 38, 38, enums::Color::rgb_color(63,65,82));
+                            if is_word && is_bonus_exists && is_on_the_bonus_line {
+                                draw_empty_ceil(j, i, bonus_color);
+                            } else {
+                                draw_empty_ceil(j, i, enums::Color::rgb_color(63, 65, 82));
+                            }
                         },
                         CeilType::Bonus => {
-                            draw_rect_fill(j * 40 + 1, i * 40 + 1 + OFFSET_Y, 38, 38, enums::Color::rgb_color(0,0,0));
+                            if is_word && field_draw.is_bonus(j,i) == true {
+                                draw_ceil(j,i,bonus_color,enums::Color::rgb_color(230,get_green(offset),230), '!');
+                            } else {
+                                draw_empty_ceil(j,i, enums::Color::rgb_color(0,0,0));
+                            }
                         }
                     }
 
                 } else {
                     let alpha = (checked_value.abs() as u8) / 5;
-                    draw_rect_fill(j * 40 + 1, i * 40 + 1 + OFFSET_Y, 38, 38, color);
-                    draw_rect_fill(j * 40 + 1, i * 40 + 1 + OFFSET_Y, 38, 38, enums::Color::rgb_color(63+alpha,65+alpha,82+alpha));
-                    set_draw_color(enums::Color::rgb_color(163+alpha,165+alpha,182+alpha));
+                    let bg = enums::Color::rgb_color(63+alpha,65+alpha,82+alpha);
+                    let fg = enums::Color::rgb_color(163+alpha,165+alpha,182+alpha);
+                    draw_ceil(j, i, bg, fg, letter);
 
                     if checked_value == -1 {
                         field_draw.set(j, i, Ceil {
@@ -232,9 +315,6 @@ fn main() -> Result<(), confy::ConfyError> {
                             ceil_type: CeilType::Empty
                         });
                     }
-
-                    draw_text( &format!("{}", field_draw.get(j,i).letter), j * 40 + 15, i * 40 + 25 + OFFSET_Y);
-
                 }
             }
         }

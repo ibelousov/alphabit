@@ -118,7 +118,6 @@ impl  Field {
                     random_index -= 1;
                 }
             }
-            // print!("\n");
         }
     }
 
@@ -132,6 +131,10 @@ impl  Field {
         }
 
         false
+    }
+
+    pub fn is_valid(&self, x: i32, y: i32) -> bool {
+        return x > 0 && y > 0 && x < self.width && y < self.height;
     }
 
     pub fn get(&self, x: i32, y: i32) -> Ceil {
@@ -227,6 +230,14 @@ impl  Field {
              return
         };
 
+        let mut bonus_lines = vec![];
+
+        for y in 0..self.height {
+            if self.is_on_the_bonus_line(0,y) {
+                bonus_lines.push(y);
+            }
+        }
+
         let (max_val,max_x,max_y) = self.find_max();
 
         let word = self.get_word();
@@ -254,15 +265,19 @@ impl  Field {
                 ceil_type: CeilType::Active
             };
         } else if is_same && self.check_word(word.to_lowercase()) {
+            let scores = self.scores.take();
+            let mut scores_append = 0;
 
             for y in 0..self.height {
                 for x in 0..self.width {
-                    if data[y as usize][x as usize].checked > 0 {
+
+                    if data[y as usize][x as usize].checked > 0 || bonus_lines.contains(&y) {
                         data[y as usize][x as usize] = Ceil {
                             letter: data[y as usize][x as usize].letter,
                             checked: -253,
                             ceil_type: CeilType::Empty
                         };
+                        scores_append += 5;
                     }
                 }
             }
@@ -271,14 +286,62 @@ impl  Field {
                 *self.most_lengthy_word.borrow_mut() = word2.clone();
             }
 
-            let scores = self.scores.take() + ((word2.capacity() / 2) * (word2.capacity() / 2)) as i32;
-            self.set_scores(scores);
+            self.set_scores(scores + (scores_append * 2));
         }
 
         drop(data);
 
         let word = self.get_word();
         *self.is_word_ready.borrow_mut() = self.check_word(word.to_lowercase());
+    }
+
+    pub fn is_bonus(&self, x: i32, y: i32) -> bool {
+        let ceil = self.get(x,y);
+
+        let xypairs = vec![
+            (-1,-1),(0,-1),(1,-1),
+            (-1,0),(1,0),
+            (-1,1),(0,1),(-1,1)
+        ];
+
+        match ceil.ceil_type {
+            CeilType::Bonus => {
+                for (offset_x,offset_y) in xypairs {
+                    let nx = x + offset_x;
+                    let ny = y + offset_y;
+                    if self.is_valid(nx, ny) && self.get(nx, ny).checked > 0 {
+                        return true
+                    }
+                }
+            },
+            _ => {}
+        }
+
+        false
+    }
+
+    pub fn is_bonus_exists(&self) -> bool {
+
+        for y in 0..self.height {
+            for x in 0..self.width {
+                if self.is_bonus(x,y) {
+                    return true;
+                }
+            }
+        }
+
+        false
+    }
+
+    pub fn is_on_the_bonus_line(&self, _x: i32, y: i32) -> bool {
+
+        for nx in 0..self.width {
+            if matches!(self.get(nx,y).ceil_type, CeilType::Bonus) && self.is_bonus(nx,y) {
+                return true;
+            }
+        }
+
+        false
     }
 
     pub fn get_at_value(&self, val: i32) -> char {
