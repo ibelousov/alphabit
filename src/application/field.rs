@@ -1,7 +1,3 @@
-pub(crate) mod animation;
-pub(crate) mod settings;
-pub(crate) mod ui;
-
 use rand::Rng;
 use std::cell::RefCell;
 use serde::{Serialize,Deserialize};
@@ -231,7 +227,7 @@ impl  Field {
 
         if matches!(self.get(x,y).ceil_type, CeilType::Empty) ||
             matches!(self.get(x,y).ceil_type, CeilType::Bonus){
-             return
+            return
         };
 
         let mut bonus_lines = vec![];
@@ -252,8 +248,8 @@ impl  Field {
         let is_checked = data[y as usize][x as usize].checked == 0;
         let is_exists = max_val > 0;
         let is_near = ((max_x - x).abs() == 1 || (max_y - y).abs() == 1) &&
-                            ((max_x - x).abs() <= 1 && (max_y - y).abs() <= 1) &&
-                            is_checked;
+            ((max_x - x).abs() <= 1 && (max_y - y).abs() <= 1) &&
+            is_checked;
         let is_same = (x == max_x) && (y == max_y);
 
         if is_near {

@@ -9,6 +9,4 @@ edition = "2021"
 serde = { version = "1.0", features = ["derive"] }
 rand = "0.3.14"
 fltk = "^1.2"
-csv = "1.1"
 confy = { version = "0.5.1", features = ["ron_conf"], default-features = false }
-serde_json = "1.0"
