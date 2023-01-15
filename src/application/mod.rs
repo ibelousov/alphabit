@@ -3,7 +3,7 @@ pub(crate) mod settings;
 pub(crate) mod ui;
 pub(crate) mod field;
 
-use std::borrow::{BorrowMut};
+use std::cell::RefCell;
 use fltk::{app, prelude::*, *, window::DoubleWindow};
 use fltk::window::Window;
 use fltk::enums::{Event};
@@ -15,11 +15,12 @@ use ui::*;
 use field::*;
 use animation::*;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 struct Config {
     field: Field,
     position_x: i32,
-    position_y: i32
+    position_y: i32,
+    table_of_leaders: Vec<(i32, String)>
 }
 
 impl ::std::default::Default for Config {
@@ -32,7 +33,19 @@ impl ::std::default::Default for Config {
         Self {
             field: field,
             position_x: 0,
-            position_y: 0
+            position_y: 0,
+            table_of_leaders: vec![
+                (0, String::from("-")),
+                (0, String::from("-")),
+                (0, String::from("-")),
+                (0, String::from("-")),
+                (0, String::from("-")),
+                (0, String::from("-")),
+                (0, String::from("-")),
+                (0, String::from("-")),
+                (0, String::from("-")),
+                (0, String::from("-")),
+            ]
         }
     }
 }
@@ -53,11 +66,13 @@ pub fn app() -> Result<(), confy::ConfyError> {
 
     let field = Rc::new(config.field.clone());
     let field_draw = Rc::clone(&field);
+    let table_of_leaders = Rc::new(RefCell::new(config.table_of_leaders.clone()));
+    let table_of_leaders_draw = Rc::clone(&table_of_leaders);
 
     let mut wind = Window::new(
         config.position_x,
         config.position_y,
-        WIDTH * CELL_SIZE,
+        WIDTH * CELL_SIZE + SIDEBAR_WIDTH,
         HEIGHT * CELL_SIZE + OFFSET_Y,
         TITLE
     );
@@ -68,6 +83,7 @@ pub fn app() -> Result<(), confy::ConfyError> {
         move |f, ev| {
             match ev {
                 Event::Push => {
+
                     if field.is_blocked() {
                         return true;
                     }
@@ -75,11 +91,29 @@ pub fn app() -> Result<(), confy::ConfyError> {
                     let (x,y) = app::event_coords();
 
                     if y > 5 && y < OFFSET_Y - 10 && x > 455 && x < 600 {
+
+                        let mut leaders = (*table_of_leaders).borrow_mut();
+                        for (idx, leader) in leaders.iter().enumerate() {
+                            if leader.0 < field.get_scores() {
+                                leaders.insert(
+                                    idx,
+                                    (field.get_scores(), field.get_longest_word()
+                                    )
+                                );
+                                break;
+                            }
+                        }
+
+                        if leaders.len() > 10 {
+                            leaders.pop();
+                        }
+
                         field.generate();
                         field.set_longest_word(String::new());
                         field.set_scores(0);
 
                         config.field = (*field).clone();
+                        config.table_of_leaders = leaders.clone();
 
                         confy::store(SETTINGS_NAME, None, &config)
                             .expect(CANNOT_SAVE_MSG);
@@ -109,10 +143,9 @@ pub fn app() -> Result<(), confy::ConfyError> {
                 },
                 Event::NoEvent => {
 
-                    if config.borrow_mut().position_x != f.x() ||
-                        config.borrow_mut().position_x != f.y() {
-                        config.borrow_mut().position_x = f.x();
-                        config.borrow_mut().position_y = f.y();
+                    if config.position_x != f.x() || config.position_x != f.y() {
+                        config.position_x = f.x();
+                        config.position_y = f.y();
                         confy::store(SETTINGS_NAME, None, &config)
                             .expect(CANNOT_SAVE_MSG);
                     }
@@ -131,6 +164,10 @@ pub fn app() -> Result<(), confy::ConfyError> {
         draw_longest_word(field_draw.get_longest_word());
 
         draw_finish_button();
+
+        draw_leaders_table((*table_of_leaders_draw).borrow());
+
+        draw_controls();
 
         let is_word = field_draw.is_word();
         let is_bonus_exists = field_draw.is_bonus_exists();
