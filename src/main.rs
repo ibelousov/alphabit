@@ -2,7 +2,7 @@ mod engine;
 
 use std::borrow::{BorrowMut};
 use engine::*;
-use fltk::{app, prelude::*, *};
+use fltk::{app, prelude::*, *, window::DoubleWindow};
 use fltk::window::Window;
 use fltk::enums::{Event};
 use std::rc::Rc;
@@ -33,7 +33,13 @@ impl ::std::default::Default for Config {
     }
 }
 
+fn load_icon(wind: &mut DoubleWindow) {
+    let image = image::PngImage::from_data(
+        include_bytes!("../assets/icon.png")
+    ).unwrap();
 
+    wind.set_icon(Some(image));
+}
 
 fn main() -> Result<(), confy::ConfyError> {
 
@@ -52,10 +58,7 @@ fn main() -> Result<(), confy::ConfyError> {
         TITLE
     );
 
-    let image = image::PngImage::from_data(
-        include_bytes!("../assets/icon.png")
-    ).unwrap();
-    wind.set_icon(Some(image));
+    load_icon(&mut wind);
 
     wind.handle({
         move |f, ev| {
@@ -75,7 +78,7 @@ fn main() -> Result<(), confy::ConfyError> {
                         config.field = (*field).clone();
 
                         confy::store(SETTINGS_NAME, None, &config)
-                            .expect("Не удалось сохранить настройки");
+                            .expect(CANNOT_SAVE_MSG);
 
                         f.redraw();
                     }
@@ -84,7 +87,7 @@ fn main() -> Result<(), confy::ConfyError> {
                         return true;
                     }
 
-                    let (cell_x, cell_y) = (x / 40, (y - OFFSET_Y) / 40);
+                    let (cell_x, cell_y) = (x / CELL_SIZE, (y - OFFSET_Y) / CELL_SIZE);
 
                     if app::event_mouse_button() == MouseButton::Right {
                         field.deselect();
@@ -94,7 +97,7 @@ fn main() -> Result<(), confy::ConfyError> {
 
                     config.field = (*field).clone();
                     confy::store(SETTINGS_NAME, None, &config)
-                        .expect("Не удалось сохранить настройки");
+                        .expect(CANNOT_SAVE_MSG);
 
                     f.redraw();
 
@@ -106,7 +109,8 @@ fn main() -> Result<(), confy::ConfyError> {
                         config.borrow_mut().position_x != f.y() {
                         config.borrow_mut().position_x = f.x();
                         config.borrow_mut().position_y = f.y();
-                        confy::store(SETTINGS_NAME, None, &config).expect("Не удалось сохранить настройки");
+                        confy::store(SETTINGS_NAME, None, &config)
+                            .expect(CANNOT_SAVE_MSG);
                     }
 
                     true
@@ -124,8 +128,8 @@ fn main() -> Result<(), confy::ConfyError> {
 
         draw_finish_button();
 
-        let is_word = field_draw.is_word() == true;
-        let is_bonus_exists = field_draw.is_bonus_exists() == true;
+        let is_word = field_draw.is_word();
+        let is_bonus_exists = field_draw.is_bonus_exists();
 
         draw_bg();
 
