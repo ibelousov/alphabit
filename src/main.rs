@@ -36,48 +36,52 @@ const HEIGHT: i32 = 15;
 const TITLE: &str = "Альфабит";
 const OFFSET_Y: i32 = 40;
 const SETTINGS_NAME: &str = "alphabits-ettings";
+const CELL_SIZE: i32 = 40;
 
 fn draw_direction(j:i32, i:i32, direction:Direction)
 {
     set_line_style(LineStyle::Solid, 2);
 
+    let x1 = j * CELL_SIZE + 20;
+    let y1 = i * CELL_SIZE + 20 + OFFSET_Y;
+
     match direction {
         Direction::LeftToRight => {
-            draw_line(j * 40 + 20, i * 40 + 20 + OFFSET_Y, (j + 1) * 40, i * 40 + 20 + OFFSET_Y);
+            draw_line(x1, y1, (j + 1) * CELL_SIZE, i * CELL_SIZE + 20 + OFFSET_Y);
         }
         Direction::RightToLeft => {
-            draw_line(j * 40 + 20, i * 40 + 20 + OFFSET_Y, j * 40, i * 40 + 20 + OFFSET_Y);
+            draw_line(x1, y1, j * CELL_SIZE, i * CELL_SIZE + 20 + OFFSET_Y);
         }
         Direction::UpToDown => {
-            draw_line(j * 40 + 20, i * 40 + 20 + OFFSET_Y, j * 40 + 20, (i + 1) * 40 + OFFSET_Y);
+            draw_line(x1, y1, j * CELL_SIZE + 20, (i + 1) * CELL_SIZE + OFFSET_Y);
         }
         Direction::DownToUp => {
-            draw_line(j * 40 + 20, i * 40 + 20 + OFFSET_Y,j * 40 + 20, i * 40 + OFFSET_Y);
+            draw_line(x1, y1,j * CELL_SIZE + 20, i * CELL_SIZE + OFFSET_Y);
         }
         Direction::DownRightToUpLeft => {
-            draw_line(j * 40 + 20, i * 40 + 20 + OFFSET_Y, j * 40, i * 40 + OFFSET_Y);
+            draw_line(x1, y1, j * CELL_SIZE, i * CELL_SIZE + OFFSET_Y);
         }
         Direction::UpRightToDownLeft => {
-            draw_line(j * 40 + 20, i * 40 + 20 + OFFSET_Y,j * 40, (i+1) * 40 + OFFSET_Y);
+            draw_line(x1, y1,j * CELL_SIZE, (i+1) * CELL_SIZE + OFFSET_Y);
         }
         Direction::DownLeftToUpRight => {
-            draw_line(j * 40 + 20, i * 40 + 20 + OFFSET_Y, (j+1) * 40, i * 40 + OFFSET_Y);
+            draw_line(x1, y1, (j+1) * CELL_SIZE, i * CELL_SIZE + OFFSET_Y);
         }
         Direction::UpLeftToDownRight => {
-            draw_line(j * 40 + 20, i * 40 + 20 + OFFSET_Y,(j + 1) * 40, (i + 1) * 40 + OFFSET_Y);
+            draw_line(x1, y1,(j + 1) * CELL_SIZE, (i + 1) * CELL_SIZE + OFFSET_Y);
         }
         Direction::None => {}
     }
 }
 
 fn draw_empty_ceil(x: i32, y: i32, bg: enums::Color) {
-    draw_rect_fill(x * 40 + 1, y * 40 + 1 + OFFSET_Y, 38, 38, bg);
+    draw_rect_fill(x * CELL_SIZE + 1, y * CELL_SIZE + 1 + OFFSET_Y, 38, 38, bg);
 }
 
 fn draw_ceil(x: i32, y: i32, bg: enums::Color, fg: enums::Color, letter: char) {
     draw_empty_ceil(x,y,bg);
     set_draw_color(fg);
-    draw_text( &format!("{}", letter), x * 40 + 15, y * 40 + 25 + OFFSET_Y);
+    draw_text( &format!("{}", letter), x * CELL_SIZE + 15, y * CELL_SIZE + 25 + OFFSET_Y);
 }
 
 fn draw_ceil_direction(x: i32, y: i32, before_direction: Direction, after_direction: Direction) {
@@ -110,7 +114,13 @@ fn draw_finish_button() {
 }
 
 fn draw_bg() {
-    draw_rect_fill(0, OFFSET_Y, WIDTH * 40, HEIGHT * 40, enums::Color::rgb_color(40,42,54));
+    draw_rect_fill(
+        0,
+        OFFSET_Y,
+        WIDTH * CELL_SIZE,
+        HEIGHT * CELL_SIZE,
+        enums::Color::rgb_color(40,42,54)
+    );
 }
 
 fn main() -> Result<(), confy::ConfyError> {
@@ -122,7 +132,13 @@ fn main() -> Result<(), confy::ConfyError> {
     let field = Rc::new(config.field.clone());
     let field_draw = Rc::clone(&field);
 
-    let mut wind = Window::new(config.position_x, config.position_y, WIDTH * 40, HEIGHT * 40 + OFFSET_Y, TITLE);
+    let mut wind = Window::new(
+        config.position_x,
+        config.position_y,
+        WIDTH * CELL_SIZE,
+        HEIGHT * CELL_SIZE + OFFSET_Y,
+        TITLE
+    );
 
     let image = image::PngImage::from_data(
         include_bytes!("../assets/icon.png")
