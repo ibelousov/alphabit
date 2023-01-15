@@ -39,7 +39,7 @@ const SETTINGS_NAME: &str = "alphabits-ettings";
 
 fn draw_direction(j:i32, i:i32, direction:Direction)
 {
-    set_line_style(LineStyle::Solid, 3);
+    set_line_style(LineStyle::Solid, 2);
 
     match direction {
         Direction::LeftToRight => {
