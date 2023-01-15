@@ -6,7 +6,6 @@ use fltk::{app, prelude::*, *, draw::*};
 use fltk::window::Window;
 use fltk::enums::{Event};
 use std::rc::Rc;
-use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Serialize, Deserialize};
 use fltk::app::MouseButton;
 
@@ -37,42 +36,6 @@ const HEIGHT: i32 = 15;
 const TITLE: &str = "Альфабит";
 const OFFSET_Y: i32 = 40;
 const SETTINGS_NAME: &str = "alphabits-ettings";
-
-fn get_green(offset: i32) -> u8 {
-    let millis = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards")
-        .as_millis();
-
-    let millis: i32 = ((millis + (offset as u128)) % 1000) as i32;
-    let millis =  (millis - 500).abs();
-
-    (68 + (millis / 10)) as u8
-}
-
-fn get_blue(offset: i32) -> u8 {
-    let millis = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards")
-        .as_millis();
-
-    let millis: i32 = ((millis + (offset as u128)) % 2000) as i32;
-    let millis =  (millis - 1000).abs();
-
-    (68 + (millis / 10)) as u8
-}
-
-fn get_red(offset: i32) -> u8 {
-    let millis = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards")
-        .as_millis();
-
-    let millis: i32 = ((millis + (offset as u128)) % 3332) as i32;
-    let millis =  (millis - 1666).abs();
-
-    (68 + (millis / 10)) as u8
-}
 
 fn draw_direction(j:i32, i:i32, direction:Direction)
 {
@@ -242,12 +205,38 @@ fn main() -> Result<(), confy::ConfyError> {
             for j in 0..field_draw.get_width() {
                 let offset = (j + i * field_draw.get_width()) * 225;
                 let color = if is_word {
-                    enums::Color::rgb_color(100, get_green(offset),100)
+                    enums::Color::rgb_color(
+                        100,
+                        engine::animation::ColorGenerator::get_color_component(
+                            offset as u32,
+                            4000,
+                            68,
+                            160
+                        ),
+                        100
+                    )
                 } else {
                     enums::Color::rgb_color(100, 100,100)
                 };
                 let bonus_color = enums::Color::rgb_color(
-                    get_red(offset),get_green(offset),get_blue(offset)
+                    engine::animation::ColorGenerator::get_color_component(
+                        offset as u32,
+                        2000,
+                        68,
+                        160
+                    ),
+                    engine::animation::ColorGenerator::get_color_component(
+                        offset as u32,
+                        3222,
+                        68,
+                        160
+                    ),
+                    engine::animation::ColorGenerator::get_color_component(
+                        offset as u32,
+                        1000,
+                        68,
+                        160
+                    )
                 );
                 let white = enums::Color::White;
                 let gray_color = enums::Color::rgb_color(63,65,82);
@@ -288,7 +277,22 @@ fn main() -> Result<(), confy::ConfyError> {
                         },
                         CeilType::Bonus => {
                             if is_word && field_draw.is_bonus(j,i) == true {
-                                draw_ceil(j,i,bonus_color,enums::Color::rgb_color(230,get_green(offset),230), '!');
+                                draw_ceil(
+                                    j,
+                                    i,
+                                    bonus_color,
+                                    enums::Color::rgb_color(
+                                        230,
+                                        engine::animation::ColorGenerator::get_color_component(
+                                            offset as u32,
+                                            4000,
+                                            68,
+                                            160
+                                        ),
+                                        230
+                                    ),
+                                    '!'
+                                );
                             } else {
                                 draw_empty_ceil(j,i, enums::Color::rgb_color(0,0,0));
                             }

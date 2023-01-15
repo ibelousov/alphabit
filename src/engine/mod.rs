@@ -1,3 +1,5 @@
+pub(crate) mod animation;
+
 use rand::Rng;
 use std::cell::RefCell;
 use serde::{Serialize,Deserialize};
