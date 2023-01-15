@@ -1,4 +1,6 @@
 pub(crate) mod animation;
+pub(crate) mod settings;
+pub(crate) mod ui;
 
 use rand::Rng;
 use std::cell::RefCell;
