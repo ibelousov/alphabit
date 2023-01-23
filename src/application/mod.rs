@@ -2,6 +2,7 @@ pub(crate) mod animation;
 pub(crate) mod settings;
 pub(crate) mod ui;
 pub(crate) mod field;
+pub(crate) mod sound;
 
 use std::cell::RefCell;
 use fltk::{app, prelude::*, *, window::DoubleWindow};
@@ -76,6 +77,11 @@ pub fn app() -> Result<(), confy::ConfyError> {
         HEIGHT * CELL_SIZE + OFFSET_Y,
         TITLE
     );
+
+
+
+
+    sound::play_sound();
 
     load_icon(&mut wind);
 

@@ -10,3 +10,4 @@ serde = { version = "1.0", features = ["derive"] }
 rand = "0.3.14"
 fltk = "^1.2"
 confy = { version = "0.5.1", features = ["ron_conf"], default-features = false }
+rodio = "0.16.0"
