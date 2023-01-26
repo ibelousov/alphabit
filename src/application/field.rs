@@ -1,6 +1,8 @@
 use rand::Rng;
 use std::cell::RefCell;
+use std::collections::HashMap;
 use serde::{Serialize,Deserialize};
+use crate::application::settings;
 
 pub enum Direction {
     LeftToRight,
@@ -28,7 +30,7 @@ pub struct Ceil {
     pub ceil_type: CeilType
 }
 
-#[derive(Debug,Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Field {
     pub scores: RefCell<i32>,
     is_word_ready: RefCell<bool>,
@@ -92,7 +94,48 @@ impl  Field {
     }
 
     pub fn generate(&self) {
-        let string = String::from("АААААААААААААААААААААБББББВВВВВВВВВВВВВВВВГГГГГГДДДДДДДДДДЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЁЖЖЖЗЗЗЗЗИИИИИИИИИИИИИИИИИИИИИИИИИИИЙЙЙЙККККККККККККЛЛЛЛЛЛЛЛЛЛЛЛЛЛМММММММММММНННННННННННННННННННННННОООООООООООООООООООООООООООООООООООООППППППППППРРРРРРРРРРРРРРРРРСССССССССССССССССССТТТТТТТТТТТТТТТТТТТТТТУУУУУФФХХХЦЦЧЧЧЧЧШШЩЪЫЫЫЫЫЫЫЬЬЬЬЬЬЭЮЮЯЯЯЯЯЯЯ");
+        let mut letter_frequency = HashMap::new();
+        letter_frequency.insert('А', 8.01);
+        letter_frequency.insert('Б', 1.59);
+        letter_frequency.insert('В', 4.54);
+        letter_frequency.insert('Г', 1.70);
+        letter_frequency.insert('Д', 2.98);
+        letter_frequency.insert('Е',8.45);
+        letter_frequency.insert('Ё', 0.04);
+        letter_frequency.insert('Ж',0.94);
+        letter_frequency.insert('З',1.65);
+        letter_frequency.insert('И',7.35);
+        letter_frequency.insert('Й',1.21);
+        letter_frequency.insert('К',3.49);
+        letter_frequency.insert('Л',4.40);
+        letter_frequency.insert('М',3.21);
+        letter_frequency.insert('Н',6.70);
+        letter_frequency.insert('О',10.97);
+        letter_frequency.insert('П',2.81);
+        letter_frequency.insert('Р',4.73);
+        letter_frequency.insert('С',5.47);
+        letter_frequency.insert('Т',6.26);
+        letter_frequency.insert('У',2.62);
+        letter_frequency.insert('Ф',0.26);
+        letter_frequency.insert('Х',0.97);
+        letter_frequency.insert('Ц',0.48);
+        letter_frequency.insert('Ч',1.44);
+        letter_frequency.insert('Ш', 0.73);
+        letter_frequency.insert('Щ',0.36);
+        letter_frequency.insert('Ъ',0.04);
+        letter_frequency.insert('Ы',1.90);
+        letter_frequency.insert('Ь',1.74);
+        letter_frequency.insert('Э',0.32);
+        letter_frequency.insert('Ю',0.64);
+        letter_frequency.insert('Я',2.01);
+
+        let mut string = String::new();
+
+        for (letter, percent) in &letter_frequency {
+            let count = (percent * 100.0) as usize;
+
+            string.push_str(String::from(*letter).repeat(count).as_str());
+        }
 
         for j in 0..self.height {
             let random_type = rand::thread_rng().gen_range(-self.width, self.width);
@@ -270,14 +313,21 @@ impl  Field {
 
             for y in 0..self.height {
                 for x in 0..self.width {
-
-                    if data[y as usize][x as usize].checked > 0 || bonus_lines.contains(&y) {
+                    let is_checked = data[y as usize][x as usize].checked > 0;
+                    let is_bonus_line = bonus_lines.contains(&y);
+                    if is_checked || is_bonus_line {
+                        scores_append += if is_checked && bonus_lines.len() > 0 {
+                            settings::SCORES_FOR_BONUS_AND_CHECKED
+                        } else if !is_checked && is_bonus_line {
+                            settings::SCORES_FOR_BONUS_LINE
+                        } else {
+                            settings::SCORES_FOR_CHECKED
+                        };
                         data[y as usize][x as usize] = Ceil {
                             letter: data[y as usize][x as usize].letter,
                             checked: -253,
                             ceil_type: CeilType::Empty
                         };
-                        scores_append += 5;
                     }
                 }
             }
