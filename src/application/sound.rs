@@ -1,3 +1,4 @@
+use std::io::BufReader;
 use std::thread;
 use rand::thread_rng;
 use rodio::{Decoder, OutputStream, source::Source};
@@ -7,27 +8,33 @@ pub struct WavetableOscillator {
     wave_table: Vec<f32>,
     index: f32,
     index_increment: f32,
+    duration: u64,
+    sample_index: u128
 }
 
 impl WavetableOscillator {
-    fn new(sample_rate: u32, wave_table: Vec<f32>) -> WavetableOscillator {
+    fn new(sample_rate: u32, wave_table: Vec<f32>, duration: u64) -> WavetableOscillator {
         return WavetableOscillator {
-            sample_rate: sample_rate,
-            wave_table: wave_table,
+            sample_rate,
+            wave_table,
             index: 0.0,
             index_increment: 0.0,
+            duration,
+            sample_index: 0
         };
     }
 
     fn set_frequency(&mut self, frequency: f32) {
-        self.index_increment = frequency * self.wave_table.len() as f32
-            / self.sample_rate as f32;
+        self.index_increment = frequency * self.wave_table.len() as f32 / self.sample_rate as f32;
     }
 
     fn get_sample(&mut self) -> f32 {
         let sample = self.lerp();
         self.index += self.index_increment;
         self.index %= self.wave_table.len() as f32;
+        self.sample_index += 1;
+
+        println!("SAMPLE_INDEX: {}", self.sample_index);
         return sample;
     }
 
@@ -71,15 +78,12 @@ impl Iterator for WavetableOscillator {
 
 pub fn play_sound() {
     thread::spawn(|| {
-        let mut wave_table: Vec<f32> =  Vec::with_capacity(64);
-        for n in 0..64 {
-            wave_table.push((2.0 * std::f32::consts::PI * n as f32 / 64 as f32).sin());
-        }
-        let mut oscillator = WavetableOscillator::new(44100, wave_table);
-        oscillator.set_frequency(220.0);
-        let (_stream,stream_handle) = OutputStream::try_default().unwrap();
-        let _result = stream_handle.play_raw(oscillator.convert_samples());
-
-        std::thread::sleep(std::time::Duration::from_millis(200));
+        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+        let slice = std::io::Cursor::new(
+            include_bytes!("../../assets/sound.wav").as_ref()
+        );
+        let source = Decoder::new(slice).unwrap();
+        let _sound_result = stream_handle.play_raw(source.convert_samples());
+        std::thread::sleep(std::time::Duration::from_millis(2000));
     });
 }

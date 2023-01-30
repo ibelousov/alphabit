@@ -78,11 +78,6 @@ pub fn app() -> Result<(), confy::ConfyError> {
         TITLE
     );
 
-
-
-
-    sound::play_sound();
-
     load_icon(&mut wind);
 
     wind.handle({
@@ -137,6 +132,7 @@ pub fn app() -> Result<(), confy::ConfyError> {
                         field.deselect();
                     } else {
                         field.try_check(cell_x, cell_y);
+                        sound::play_sound();
                     }
 
                     config.field = (*field).clone();
