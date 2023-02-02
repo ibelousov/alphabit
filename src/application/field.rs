@@ -2,7 +2,7 @@ use rand::Rng;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use serde::{Serialize,Deserialize};
-use crate::application::settings;
+use crate::application::{settings, sound};
 
 pub enum Direction {
     LeftToRight,
@@ -264,6 +264,8 @@ impl  Field {
                 };
             }
         }
+
+        sound::play_undo();
     }
 
     pub fn try_check(&self, x: i32, y: i32) {
@@ -296,12 +298,14 @@ impl  Field {
         let is_same = (x == max_x) && (y == max_y);
 
         if is_near {
+            sound::play_click();
             data[y as usize][x as usize] = Ceil {
                 checked: max_val + 1,
                 letter:data[y as usize][x as usize].letter,
                 ceil_type: CeilType::Active
             };
         } else if !is_exists {
+            sound::play_click();
             data[y as usize][x as usize] = Ceil {
                 checked: 1,
                 letter: data[y as usize][x as usize].letter,
@@ -337,6 +341,12 @@ impl  Field {
             }
 
             self.set_scores(scores + (scores_append * 2));
+
+            if bonus_lines.len() > 0 {
+                sound::play_high_win();
+            } else {
+                sound::play_low_win();
+            }
         }
 
         drop(data);
