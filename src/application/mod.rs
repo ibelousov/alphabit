@@ -128,15 +128,11 @@ pub fn app() -> Result<(), confy::ConfyError> {
 
                     let (cell_x, cell_y) = (x / CELL_SIZE, (y - OFFSET_Y) / CELL_SIZE);
 
-                    println!("START: {}", animation::ColorGenerator::get_milliseconds());
-
                     if app::event_mouse_button() == MouseButton::Right {
                         field.deselect();
                     } else {
                         field.try_check(cell_x, cell_y);
                     }
-
-                    println!("END: {}", animation::ColorGenerator::get_milliseconds());
 
                     config.field = (*field).clone();
                     confy::store(SETTINGS_NAME, None, &config)

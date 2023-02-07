@@ -347,6 +347,8 @@ impl  Field {
             } else {
                 sound::play_low_win();
             }
+        } else {
+            sound::play_wrong();
         }
 
         drop(data);
